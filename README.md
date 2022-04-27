@@ -3,27 +3,30 @@
 This make file use xilinx v++ tool to build hls kernels, link the kernels and run sw/hw emulation. It is required to set correct vitis platform path in the makefile and specify the project name and kernels to build.  
 To use the tool correctly:
 1. The cpp file that contains the kenrel to build must have the same name with the kernel. For example, if the kernel function name is 'func', its source file must be named as 'func.cpp'
-2. The project name must be specified in the Makefile.
-3. The kernel targets must be specified in the Makefile.
-4. The linker.cfg in kernel_src folder must be edit before building the 'link'. The syntax to write link file (especially [connectivity]) can be found online.[Xilinx --connectivity](https://docs.xilinx.com/r/en-US/ug1393-vitis-application-acceleration/connectivity-Options)
-5. Before running the emulation, you must source Xilinx Vitis settings and Xilinx XRT settings. Source (shell run 'source <filename>') the setup_xrt.sh in the folder may help (you have to specify your path in setup_xrt.sh).
+2. The path of tools and platform shall be set in the Makefile.
+3. The project name must be specified in the Makefile.
+4. The kernel targets must be specified in the Makefile.
+5. The linker.cfg in kernel_src folder must be edit before building the 'link'. The syntax to write link file (especially [connectivity]) can be found online.[Xilinx --connectivity](https://docs.xilinx.com/r/en-US/ug1393-vitis-application-acceleration/connectivity-Options)
+6. Before running the emulation, you must source Xilinx Vitis settings and Xilinx XRT settings. Source (shell run 'source <filename>') the setup_xrt.sh in the folder may help (you have to specify your path in setup_xrt.sh).
 
 To run, simply type:
 
 ```shell
 
-make <target> -j<threads_allowed>
+make <target> -j<threads_allowed> TARGET=<target sw_emu, hw_emu, hw>
 
 ```
 
-For example, if you want build kernels with 8 threads in parallel, run:
+For example, if you want build kernels with 8 threads in parallel for hardware emulation, run:
 
 ```shell
 
-make kernel -j8
+make kernel -j8 TARGET=hw_emu
 
 ```
+
 If you have multiple kernels to build, it is suggested to use as many threads as possible. The maximum number should not exceed the physical number of threads of you computer of course.
+It is suggested to run 'make kernel' first and check the maximum allowed frequency. Vitis set the frequency to 250MHz, if the maximum allowed frequency of your kernel is less than 250MHz, the routing (TARGET=hw) will fail.
 
 # Targets
 
@@ -31,7 +34,7 @@ If you have multiple kernels to build, it is suggested to use as many threads as
 
 Build kernels, link kernels, build host program and copy them to the current folder.
 
-## kernels
+## kernel
 
 Build kernels. The new kernels are saved in the ./build/vitis_hls. The temporay hls projects are also saved there so that they can be opend with GUI and you can check the scheduling and debuging the kernel.
 
