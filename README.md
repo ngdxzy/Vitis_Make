@@ -1,13 +1,15 @@
 # Vitis_Make
 
-This make file use xilinx v++ tool to build hls kernels, link the kernels and run sw/hw emulation. It is required to set correct vitis platform path in the makefile and specify the project name and kernels to build.  
+This make file use xilinx v++ tool to build hls kernels, link the kernels and run sw/hw emulation. It is required to set correct vitis platform path in the makefile and specify the project name and kernels to build. The makefile provides more freedom and less load.
+Because of the y2k bug of Xilinx Vitis, before the v++ command the "faketime 'last year'" is added. If you already applied the y2k patch, it can be removed.
 To use the tool correctly:
+0. Install faketime via 'apt install faketime'.
 1. The cpp file that contains the kenrel to build must have the same name with the kernel. For example, if the kernel function name is 'func', its source file must be named as 'func.cpp'
 2. The path of tools and platform shall be set in the Makefile.
 3. The project name must be specified in the Makefile.
 4. The kernel targets must be specified in the Makefile.
 5. The linker.cfg in kernel_src folder must be edit before building the 'link'. The syntax to write link file (especially [connectivity]) can be found online.[Xilinx --connectivity](https://docs.xilinx.com/r/en-US/ug1393-vitis-application-acceleration/connectivity-Options)
-6. Before running the emulation, you must source Xilinx Vitis settings and Xilinx XRT settings. Source (shell run 'source <filename>') the setup_xrt.sh in the folder may help (you have to specify your path in setup_xrt.sh).
+6. Before running the emulation, you must source Xilinx Vitis settings and Xilinx XRT settings. Source (shell run 'source ...') the setup_xrt.sh in the folder may help (you have to specify your path in setup_xrt.sh).
 
 To run, simply type:
 
