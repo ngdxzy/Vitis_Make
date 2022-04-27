@@ -26,7 +26,7 @@ make kernel -j8 TARGET=hw_emu
 ```
 
 If you have multiple kernels to build, it is suggested to use as many threads as possible. The maximum number should not exceed the physical number of threads of you computer of course.
-It is suggested to run 'make kernel' first and check the maximum allowed frequency. Vitis set the frequency to 250MHz, if the maximum allowed frequency of your kernel is less than 250MHz, the routing (TARGET=hw) will fail.
+It is suggested to run 'make kernel' first and check the maximum allowed frequency. Vitis set the frequency to 250MHz, if the maximum allowed frequency of your kernel is less than 250MHz, the routing (TARGET=hw) will fail. The clock frequency can also be set in the Makefile.
 
 # Targets
 
