@@ -13,7 +13,7 @@ VITIS_PLATFORM_DIR = /home/alfred/Projects/Vitis/aws-fpga/Vitis/aws_platform/xil
 VITIS_PLATFORM_PATH = $(VITIS_PLATFORM_DIR)/xilinx_aws-vu9p-f1_shell-v04261818_201920_3.xpfm
 
 # Project Name
-PRJ_NAME ?= NAME_IT_BY_YOURSELF 
+PRJ_NAME ?= NAME_IT_BY_YOURSELF
 TARGET ?= hw_emu
 # Host source files
 HOST_SRC_DIR ?= host_src
@@ -24,7 +24,16 @@ KERNEL_O_DIR ?= build/vitis_hls
 KERNEL_SRC_DIR ?= kernel_src
 
 # Kernel to build
-HW_KERNEL_OBJS += $(KERNEL_O_DIR)/KERNEL(S)_DEFINED_BY_YOURSELF.xo
+# Automatic deduce that build all kernel_src/*.cpp to *.xo
+# Make sure that each cpp file has only one kernel
+HW_KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.cpp)
+HW_KERNEL_OBJS := $(patsubst $(KERNEL_SRC_DIR)%.cpp,$(KERNEL_O_DIR)%.xo,$(HW_KERNEL_SRCS))
+
+# Setup debuging
+# If you want debug (live waveform for example, you must add -g when building the kernels)
+KERNEL_EXT_CONFIG += -g
+XRT_INI_CONFIG := ./debuging_setup.ini
+
 
 # set kernel frequency if necessary
 KERNEL_EXT_CONFIG += --kernel_frequency
@@ -71,8 +80,7 @@ KERNEL_EXT_CONFIG += --log_dir
 KERNEL_EXT_CONFIG += $(LOG_DIR)
 KERNEL_EXT_CONFIG += --report_dir
 KERNEL_EXT_CONFIG += $(REPORT_DIR)
-# KERNEL_EXT_CONFIG += -s
-KERNEL_EXT_CONFIG += -g
+KERNEL_EXT_CONFIG += -s
 
 
 LINK_EXT_CONFIG += --temp_dir
@@ -97,7 +105,7 @@ link: $(BINARY_CONTAINER)
 
 
 run: $(RUN_EXE) $(RUN_BIN) emconfig.json
-	export XCL_EMULATION_MODE=$(TARGET) && ./$(RUN_EXE) $(RUN_BIN)
+	export XCL_EMULATION_MODE=$(TARGET) && export XRT_INI_PATH=$(XRT_INI_CONFIG) && ./$(RUN_EXE) $(RUN_BIN)
 
 $(RUN_EXE): $(HOST_EXE)
 	-@cp $(HOST_EXE) ./
@@ -114,6 +122,11 @@ clean:
 	-$(RM) $(RUN_BIN)
 	-$(RMDIR) .run
 	-$(RMDIR) .ipcache
+	-$(RM) *.wdb
+	-$(RM) *.wcfg
+	-$(RM) *.protoinst
+	-$(RM) *.csv
+
 
 .PHONY: incremental
 incremental: all
@@ -121,13 +134,14 @@ incremental: all
 
 nothing:
 
+
 # build kernels first, automatic build all kernels
 $(KERNEL_O_DIR)/%.xo: $(KERNEL_SRC_DIR)/%.cpp
 	-@mkdir -p $(@D)
 	-@mkdir -p $(LOG_DIR)
 	-@mkdir -p $(REPORT_DIR)
 	-@$(RM) $@
-	faketime 'last year' $(VPP) $(VPP_OPTS) --compile -I"$(<D)" --kernel $(basename $(@F)) --advanced.misc solution_name=$(basename $(@F)) $(KERNEL_EXT_CONFIG) -o"$@" "$<"
+	$(VPP) $(VPP_OPTS) --compile -I"$(<D)" --kernel $(basename $(@F)) --advanced.misc solution_name=$(basename $(@F)) $(KERNEL_EXT_CONFIG) -o"$@" "$<"
 
 	
 # link project secondly
