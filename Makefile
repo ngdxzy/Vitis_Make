@@ -17,7 +17,8 @@ PRJ_NAME ?= NAME_IT_BY_YOURSELF
 TARGET ?= hw_emu
 # Host source files
 HOST_SRC_DIR ?= host_src
-HOST_SRC += $(HOST_SRC_DIR)/host.cpp
+HOST_O_DIR ?= build/host
+HOST_OBJ += $(HOST_O_DIR)/host.o
 
 # Kernel Source Path, do not modify
 KERNEL_O_DIR ?= build/vitis_hls
@@ -62,7 +63,6 @@ BUILD_SUBDIRS += build
 
 BINARY_CONTAINER += build/vivado/bit_container.xclbin
 
-HOST_OBJ +=	build/host/host.o 
 HOST_EXE = build/host/$(PRJ_NAME)
 
 LOG_DIR ?= build/logs
@@ -155,7 +155,7 @@ $(HOST_EXE): $(HOST_OBJ)
 	-@mkdir -p $(@D)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
 
-$(HOST_OBJ): $(HOST_SRC)
+$(HOST_O_DIR)/%.o: $(HOST_SRC_DIR)/%.cpp
 	-@mkdir -p $(@D)
 	$(HOST_CXX) $(CXXFLAGS) -o "$@" "$<"
 
