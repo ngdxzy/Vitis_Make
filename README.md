@@ -10,6 +10,7 @@ This make file use xilinx v++ tool to build hls kernels, link the kernels and ru
 5. The linker.cfg in kernel_src folder must be edit before building the 'link'. The syntax to write link file (especially [connectivity]) can be found online.[Xilinx --connectivity](https://docs.xilinx.com/r/en-US/ug1393-vitis-application-acceleration/connectivity-Options)
 6. Before running the emulation, you must source Xilinx Vitis settings and Xilinx XRT settings. Source (shell run 'source ...') the setup_xrt.sh in the folder may help (you have to specify your path in setup_xrt.sh).
 7. You can set the debug mode in debuging_setup.ini. If you set the 'debug_mode' as 'gui', you can enjoy the live waveform. [Reference](https://docs.xilinx.com/r/2021.2-English/ug1393-vitis-application-acceleration/xrt.ini-File)
+8. If you want to use AWS F1 instance, you have to further generate the *.awsxclbin file. The recommended way is to create a folder called to_aws and then copy the *.xclbin file into the to_aws. After that, you can run the generation commands provided by AWS-FPGA inside this folder. The check_status.sh script is to help you check if the awsxclbin is ready to use. You can run it with './check_status.sh to_aws' (to_aws can be replaced).
 
 To run, simply type:
 
