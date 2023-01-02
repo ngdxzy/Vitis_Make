@@ -29,7 +29,10 @@ make kernel -j8 TARGET=hw_emu
 ```
 
 If you have multiple kernels to build, it is suggested to use as many threads as possible. The maximum number should not exceed the physical number of threads of you computer of course.
+
 It is suggested to run 'make kernel' first and check the maximum allowed frequency. Vitis set the frequency to 250MHz, if the maximum allowed frequency of your kernel is less than 250MHz, the routing (TARGET=hw) will fail. The clock frequency can also be set in the Makefile.
+
+(UPDATE) Now, if the target is 'hw_emu' or 'sw_emu', the '-g' will be added for both kernel compiling and linking, or it won't be added to reduce the overhead.
 
 # Targets
 
@@ -71,3 +74,6 @@ Run the emulation (directly on hardware is not supported, it is designed for AWS
 
 Clean up the project. Be careful.
 
+## kill
+
+Force all simulation threads to stop. Done by 'kill_simulation.sh' script, which found all pid number with 'xsim' in the command line and send 9 (SIGKILL) signal to those threads. Use it carefully.
