@@ -30,6 +30,7 @@ KERNEL_SRC_DIR ?= kernel_src
 # Make sure that each cpp file has only one kernel
 HW_KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.cpp)
 HW_KERNEL_OBJS := $(patsubst $(KERNEL_SRC_DIR)%.cpp,$(KERNEL_O_DIR)%.xo,$(HW_KERNEL_SRCS))
+HW_KERNEL_HEADERS := $(wildcard $(KERNEL_SRC_DIR)/*.hpp)
 
 # Setup debuging
 # The debuging setup is in debuging_setup.ini
@@ -146,7 +147,7 @@ kill:
 	-@./kill_simulation.sh
 
 # build kernels first, automatic build all kernels
-$(KERNEL_O_DIR)/%.xo: $(KERNEL_SRC_DIR)/%.cpp
+$(KERNEL_O_DIR)/%.xo: $(KERNEL_SRC_DIR)/%.cpp $(HW_KERNEL_HEADERS)
 	-@mkdir -p $(@D)
 	-@mkdir -p $(LOG_DIR)
 	-@mkdir -p $(REPORT_DIR)
