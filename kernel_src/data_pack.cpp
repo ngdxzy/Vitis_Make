@@ -25,37 +25,32 @@ void data_pack(unsigned int N, unsigned int destination, hls::stream<data_t>& st
 #pragma HLS interface s_axilite port=destination
 
     unsigned int num_of_data = N >> 4; // 128bit -> 2 ^ 4 Bytes, num_of_data should be N >> 4; Now, assuming that N is a multiple of 16 bytes
-    unsigned int num_of_pkt =  N >> 6; // 512bit -> 2 ^ 6 Bytes, num_of_pkts should be N >> 6;
-    if ((N & 0x3f) != 0){ // if N is not a multiple of 64, the the last 6 bits won't be 0; in this case, there is one more packet
-        num_of_pkt = num_of_pkt + 1;
-    }
-    const unsigned char data_per_pkt = 4; // 4 data makes one pkt
+    
+    data_t shift_temp = 0;
+    ap_uint<7> frame_counter = 0; // 0-127, required 87
 
-    ap_uint<5> frame_counter = 0; // counts for UDP frame, one frame is 1408 Bytes, 1408/64 = 22 pkts;
-
-    for (unsigned int pkt_counter = 0; pkt_counter < num_of_pkt; pkt_counter++){
-#pragma HLS PIPELINE II = 4
-        ap_uint<512> data_temp;
-        pkt pkt_temp;
-        for (unsigned int data_counter = 0; data_counter < data_per_pkt; data_counter++){
-#pragma HLS PIPELINE II = 1
-            data_t i_temp;
-            stream_in >> i_temp;
-            ap_uint<32> lower_bound = data_counter << 7;
-            ap_uint<32> higer_bound = (data_counter << 7) | 127;
-            data_temp(higer_bound, lower_bound) = i_temp;
+    for (ap_uint<32> data_counter = 0; data_counter < num_of_data; data_counter++){
+#pragma HLS pipeline ii=1
+        data_t i_temp;
+        stream_in >> i_temp;
+        shift_temp(511, 128) = shift_temp(383, 0); // shift left by 128 bit
+        shift_temp(127, 0) = i_temp; // assign last 128 bit
+        
+        if (data_counter(1, 0) == 3){ // every four data received, the last 2 bit must be 11
+            pkt pkt_temp;
+            pkt_temp.data = shift_temp;
+            pkt_temp.keep = -1;
+            pkt_temp.dest = destination;
+            pkt_temp.last = (frame_counter == 87) || (data_counter == (num_of_data - 1)); // one udp_frame or the last data
+            stream_out << pkt_temp;
         }
-        pkt_temp.data = data_temp;
-        pkt_temp.keep = -1;
-        pkt_temp.dest = destination;
-        pkt_temp.last = (pkt_counter == (num_of_pkt - 1)) || (frame_counter == 21); // last pkt or one frame finished
-        stream_out << pkt_temp;
-        if (frame_counter == 21){ // counter between 0 -> 21
+        if (frame_counter == 87){ // one udp frame has 1408 bytes, which is 88 data_t
             frame_counter = 0;
         }
         else{
             frame_counter++;
         }
     }
+
 }
 }
