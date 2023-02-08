@@ -148,7 +148,6 @@ LINK_EXT_CONFIG += build/vivado
 
 .PHONY: all clean host kernel link run kill
 all: $(HW_KERNEL_OBJS) $(BINARY_CONTAINER) $(HOST_EXE)
-	-@cp $(HOST_EXE) ./
 	-@cp $(BINARY_CONTAINER) ./
 
 host: $(HOST_TX_EXE) $(HOST_RX_EXE)

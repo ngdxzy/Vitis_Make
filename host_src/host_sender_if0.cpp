@@ -172,13 +172,14 @@ int main(int argc, char **argv) {
     	xclRegWrite(handle, nlidx, IP_ADDR_OFFSET, my_ip_address);
     	xclRegWrite(handle, nlidx, GATEWAY_OFFSET, ip_gateway); 
 
+	printf("Using socket 3\n");
 	unsigned num_sockets_hw = 0, num_sockets_sw = sizeof(sockets) / sizeof(sockets[0]);
-    	sockets[0].theirIP = their_ip_address;
-    	sockets[0].theirPort = 60000;
-    	sockets[0].myPort = 50000;
-    	sockets[0].valid = true;
-    	printf("My port: %d\n", sockets[0].myPort);
-    	printf("Their port: %d\n", sockets[0].theirPort);
+    	sockets[3].theirIP = their_ip_address;
+    	sockets[3].theirPort = 60000;
+    	sockets[3].myPort = 50000;
+    	sockets[3].valid = true;
+    	printf("My port: %d\n", sockets[3].myPort);
+    	printf("Their port: %d\n", sockets[3].theirPort);
     
    	printf("My IP address: %x\n", my_ip_address);
     	printf("Their IP address: %x\n", their_ip_address);
@@ -243,14 +244,16 @@ int main(int argc, char **argv) {
       
 	// User logic stuff
 	ul = clCreateKernel(program, "txkrnl", &err);
+	dp = clCreateKernel(program, "data_pack", &err);
    	auto packet_size_bytes = sizeof(uint8_t) * packet_size_total;
    	buffer_packetdata = clCreateBuffer(context, CL_MEM_READ_ONLY, packet_size_bytes, NULL, &err);  
    	cl_uint pst = (cl_uint)packet_size_bytes;
    	cl_uint desti = 0;
   	clSetKernelArg(ul, 0,  sizeof(cl_mem), &buffer_packetdata);
    	clSetKernelArg(ul, 2,  sizeof(cl_uint), &pst); 
-   	clSetKernelArg(ul, 3,  sizeof(cl_uint), &desti); 
-   	clSetKernelArg(ul, 4,  sizeof(cl_uint), &enc);
+   	clSetKernelArg(ul, 3,  sizeof(cl_uint), &enc);
+	clSetKernelArg(dp, 0,  sizeof(cl_uint), &pst)
+	clSetKernelArg(dp, 1,  sizeof(cl_uint), &desti)
 	uint8_t *ptr_packetdata = (uint8_t*)clEnqueueMapBuffer(q, buffer_packetdata, CL_TRUE, CL_MAP_WRITE, 0, packet_size_bytes, 0, NULL, NULL, &err);
 	// Read text file
     	char *code = readFile("./alice29.txt");
@@ -261,6 +264,7 @@ int main(int argc, char **argv) {
     	clEnqueueMigrateMemObjects(q, 1, mems, 0, 0, NULL, NULL);
     	printf("Enqueue user kernel...\n");
     	clEnqueueTask(q, ul, 0, NULL, NULL);
+    	clEnqueueTask(q, dp, 0, NULL, NULL);
     	clFinish(q);
     	printf("Message of size %d transmitted.\n", packet_size_total);
     	printf("Message at the transmitter:\n");

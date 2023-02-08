@@ -45,10 +45,8 @@ and writes to a stream interface to another kernel */
 #include "./aes/AESfunctions.cpp"
 #include "./aes/AEStables.h"
 
-#define DWIDTH 512
-#define TDWIDTH 16
+#define DWIDTH 128
 
-typedef ap_axiu<DWIDTH, 1, 1, TDWIDTH> pkt;
 void AES_Encrypt(unsigned char plaintext[stt_lng],
                 unsigned char expandedKey[ExtdCipherKeyLenghth_max], unsigned short Nr,
                 unsigned char ciphertext[stt_lng]);
@@ -135,16 +133,14 @@ void KeyExpansion(unsigned char* inputKey, unsigned short Nk,
 
 extern "C" {
 void txkrnl(ap_uint<DWIDTH>  *in,  // Read-Only Vector 1
-               hls::stream<pkt> &k2n, // Internal Stream
+               hls::stream<ap_uint<DWIDTH>> &k2n, // Internal Stream
                unsigned int     size, // Size in bytes
-               unsigned int     dest,  // destination ID
 	       unsigned int	enc   // encrypt
                ) {
 #pragma HLS INTERFACE m_axi port = in offset = slave bundle = gmem
 #pragma HLS INTERFACE axis port = k2n
 #pragma HLS INTERFACE s_axilite port = in bundle = control
 #pragma HLS INTERFACE s_axilite port = size bundle = control
-#pragma HLS INTERFACE s_axilite port = dest bundle = control
 #pragma HLS INTERFACE s_axilite port = enc bundle = control
 #pragma HLS INTERFACE s_axilite port = return bundle = control
 
@@ -163,44 +159,30 @@ data_mover:
         KeyExpansion(key, Nk, expandedKey);	
   
 	unsigned int bytes_per_beat = (DWIDTH / 8);
-	pkt v;
 
   	// Auto-pipeline is going to apply pipeline to this loop
   	for (unsigned int i = 0; i < (size / bytes_per_beat); i++) {
 		#pragma HLS LATENCY min=1 max=1000
 		#pragma HLS PIPELINE II=1
-    		ap_uint<512> tmp = in[i];
-    		ap_uint<512> out;
+    		ap_uint<128> tmp = in[i];
+    		ap_uint<128> out;
 
 		if (enc == 1){
-                	for (int k = 0; k < (512/128); k++){
-				#pragma HLS UNROLL
-                        	unsigned char plaintext[stt_lng];
-                        	for (int i=0;i<16;i++){
-                                	plaintext[i] = tmp(128*k+i*8+7,128*k+i*8);
-                        	}
-                        	unsigned char ciphertext[stt_lng];
-                        	AES_Encrypt(plaintext, expandedKey, Nr, ciphertext);
-                        	for (int i = 0; i<16; i++){
-                                	out(128*k+i*8+7,128*k+i*8) = ciphertext[i];
-                       		}
-                	}
+                        unsigned char plaintext[stt_lng];
+                        for (int i=0;i<16;i++){
+                                plaintext[i] = tmp(i*8+7,i*8);
+                        }
+                        unsigned char ciphertext[stt_lng];
+                        AES_Encrypt(plaintext, expandedKey, Nr, ciphertext);
+                        for (int i = 0; i<16; i++){
+                                out(i*8+7,i*8) = ciphertext[i];
+                        }
         	}
         	else{
                 	out = tmp;
         	}
-		v.data = out;
-		v.keep = -1;
     
-    		// set last signals when last piece of data or
-    		// multiple of 1408 bytes, packetize the payload
-    		if ( (((size / bytes_per_beat) - 1)==i) || ((((i + 1) * DWIDTH/8) % 1408) == 0))
-      			v.last = 1;
-    		else 
-      			v.last = 0;
-
-    		v.dest = dest;
-    		k2n.write(v);
+    		k2n.write(out);
   	}
 }
 }
