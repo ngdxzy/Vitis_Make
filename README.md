@@ -1,5 +1,7 @@
 # Vitis_Make
 
+Rewrite for OCT-FPGA (https://github.com/OCT-FPGA)
+
 This make file use xilinx v++ tool to build hls kernels, link the kernels and run sw/hw emulation. It is required to set correct vitis platform path in the makefile and specify the project name and kernels to build. The makefile provides more freedom and less load.
 
 0. Apply the official y2k bacth if you haven't do that. (https://support.xilinx.com/s/article/76960?language=en_US)
