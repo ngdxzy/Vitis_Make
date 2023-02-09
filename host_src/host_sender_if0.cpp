@@ -95,6 +95,7 @@ int main(int argc, char **argv) {
     	cl_kernel nl;
     	cl_kernel cmac;
    	cl_kernel ul;
+   	cl_kernel dp;
     	cl_uint nlidx;
     	cl_uint cmacidx;
     	socket_type sockets[16] = {0};
@@ -174,10 +175,10 @@ int main(int argc, char **argv) {
 
 	printf("Using socket 3\n");
 	unsigned num_sockets_hw = 0, num_sockets_sw = sizeof(sockets) / sizeof(sockets[0]);
-    	sockets[3].theirIP = their_ip_address;
-    	sockets[3].theirPort = 60000;
-    	sockets[3].myPort = 50000;
-    	sockets[3].valid = true;
+    	sockets[0].theirIP = their_ip_address;
+    	sockets[0].theirPort = 60000;
+    	sockets[0].myPort = 50000;
+    	sockets[0].valid = true;
     	printf("My port: %d\n", sockets[3].myPort);
     	printf("Their port: %d\n", sockets[3].theirPort);
     
@@ -252,8 +253,8 @@ int main(int argc, char **argv) {
   	clSetKernelArg(ul, 0,  sizeof(cl_mem), &buffer_packetdata);
    	clSetKernelArg(ul, 2,  sizeof(cl_uint), &pst); 
    	clSetKernelArg(ul, 3,  sizeof(cl_uint), &enc);
-	clSetKernelArg(dp, 0,  sizeof(cl_uint), &pst)
-	clSetKernelArg(dp, 1,  sizeof(cl_uint), &desti)
+	clSetKernelArg(dp, 0,  sizeof(cl_uint), &pst);
+	clSetKernelArg(dp, 1,  sizeof(cl_uint), &desti);
 	uint8_t *ptr_packetdata = (uint8_t*)clEnqueueMapBuffer(q, buffer_packetdata, CL_TRUE, CL_MAP_WRITE, 0, packet_size_bytes, 0, NULL, NULL, &err);
 	// Read text file
     	char *code = readFile("./alice29.txt");
@@ -264,7 +265,9 @@ int main(int argc, char **argv) {
     	clEnqueueMigrateMemObjects(q, 1, mems, 0, 0, NULL, NULL);
     	printf("Enqueue user kernel...\n");
     	clEnqueueTask(q, ul, 0, NULL, NULL);
+	printf("Tx started!\n");
     	clEnqueueTask(q, dp, 0, NULL, NULL);
+	printf("DP started!\n");
     	clFinish(q);
     	printf("Message of size %d transmitted.\n", packet_size_total);
     	printf("Message at the transmitter:\n");

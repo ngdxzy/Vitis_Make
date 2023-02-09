@@ -26,7 +26,7 @@ void data_pack(unsigned int N, unsigned int destination, hls::stream<data_t>& st
 
     unsigned int num_of_data = N >> 4; // 128bit -> 2 ^ 4 Bytes, num_of_data should be N >> 4; Now, assuming that N is a multiple of 16 bytes
     
-    data_t shift_temp = 0;
+    ap_uint<512> shift_temp = 0;
     ap_uint<7> frame_counter = 0; // 0-127, required 87
 
     for (ap_uint<32> data_counter = 0; data_counter < num_of_data; data_counter++){
@@ -35,11 +35,19 @@ void data_pack(unsigned int N, unsigned int destination, hls::stream<data_t>& st
         stream_in >> i_temp;
         shift_temp(511, 128) = shift_temp(383, 0); // shift left by 128 bit
         shift_temp(127, 0) = i_temp; // assign last 128 bit
-        
-        if (data_counter(1, 0) == 3){ // every four data received, the last 2 bit must be 11
+        ap_uint<2> strb = data_counter(1, 0);
+        if ((strb == 3) || (data_counter == (num_of_data - 1))){ // every four data received, the last 2 bit must be 11
             pkt pkt_temp;
             pkt_temp.data = shift_temp;
-            pkt_temp.keep = -1;
+            for (unsigned char keep_counter = 0; keep_counter < 4; keep_counter++){
+#pragma HLS UNROLL
+                if(strb >= keep_counter){
+                    pkt_temp.keep((keep_counter << 4) | 15, (keep_counter << 4)) = 65535;
+                }
+                else{
+                    pkt_temp.keep((keep_counter << 4) | 15, (keep_counter << 4)) = 0;
+                }
+            }
             pkt_temp.dest = destination;
             pkt_temp.last = (frame_counter == 87) || (data_counter == (num_of_data - 1)); // one udp_frame or the last data
             stream_out << pkt_temp;
