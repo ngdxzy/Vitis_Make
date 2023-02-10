@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
     	cl_program program;
     	cl_context context;
     	cl_command_queue q;
+    	cl_command_queue q1;
     	cl_int binaryStatus;
     	xclDeviceHandle handle;
     	xuid_t xclbinId;
@@ -139,7 +140,8 @@ int main(int argc, char **argv) {
 			return EXIT_FAILURE;
 		}
 		context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-	       	q = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
+	       	q = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &err);
+	       	q1 = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
        		printf("Device count %d\n",deviceCount); 
        		int size=load_file_to_memory(xclbinFilename, (char **) &kernelBinary);
        		printf("xclbin size: %d\n",size);
@@ -179,8 +181,8 @@ int main(int argc, char **argv) {
     	sockets[0].theirPort = 60000;
     	sockets[0].myPort = 50000;
     	sockets[0].valid = true;
-    	printf("My port: %d\n", sockets[3].myPort);
-    	printf("Their port: %d\n", sockets[3].theirPort);
+    	printf("My port: %d\n", sockets[0].myPort);
+    	printf("Their port: %d\n", sockets[0].theirPort);
     
    	printf("My IP address: %x\n", my_ip_address);
     	printf("Their IP address: %x\n", their_ip_address);
@@ -268,6 +270,7 @@ int main(int argc, char **argv) {
 	printf("Tx started!\n");
     	clEnqueueTask(q, dp, 0, NULL, NULL);
 	printf("DP started!\n");
+    	clFinish(q);
     	clFinish(q);
     	printf("Message of size %d transmitted.\n", packet_size_total);
     	printf("Message at the transmitter:\n");
