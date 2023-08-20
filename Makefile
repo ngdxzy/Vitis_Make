@@ -2,24 +2,23 @@
 # this file was created by alfred. Do not trust it.
 #
 # tool chain path
-XILINX_VITIS ?= /tools/Xilinx/Vitis/2021.2
+XILINX_VITIS ?= /tools/Xilinx/Vitis/2023.1
 XILINX_XRT ?= /opt/xilinx/xrt
-XILINX_VIVADO ?= /tools/Xilinx/Vivado/2021.2
-XILINX_HLS_INCLUDES ?= /tools/Xilinx/Vitis_HLS/2021.2/include
+XILINX_VIVADO ?= /tools/Xilinx/Vivado/2023.1
+XILINX_HLS_INCLUDES ?= /tools/Xilinx/Vitis_HLS/2023.1/include
 
 # Platform path
-VITIS_PLATFORM = xilinx_aws-vu9p-f1_shell-v04261818_201920_3
-VITIS_PLATFORM_DIR = /home/alfred/Projects/Vitis/aws-fpga/Vitis/aws_platform/xilinx_aws-vu9p-f1_shell-v04261818_201920_3
-VITIS_PLATFORM_PATH = $(VITIS_PLATFORM_DIR)/xilinx_aws-vu9p-f1_shell-v04261818_201920_3.xpfm
+VITIS_PLATFORM = xilinx_u280_gen3x16_xdma_1_202211_1
 
 # Project Name
-PRJ_NAME ?= NAME_IT
+PRJ_NAME ?= OCT_FDTD
 TARGET ?= hw_emu
 # Host source files
-HOST_SRC_DIR ?= host_src
+HOST_SRC_DIR := host_src
+HOST_HEADERS := $(wildcard common/*.hpp)
+HOST_HEADERS += $(wildcard host_src/*.hpp)
 HOST_O_DIR ?= build/host
 HOST_OBJ += $(HOST_O_DIR)/host.o
-# HOST_OBJ += $(HOST_O_DIR)/xcl2.o
 
 # Kernel Source Path, do not modify
 KERNEL_O_DIR ?= build/vitis_hls
@@ -31,6 +30,8 @@ KERNEL_SRC_DIR ?= kernel_src
 HW_KERNEL_SRCS := $(wildcard $(KERNEL_SRC_DIR)/*.cpp)
 HW_KERNEL_OBJS := $(patsubst $(KERNEL_SRC_DIR)%.cpp,$(KERNEL_O_DIR)%.xo,$(HW_KERNEL_SRCS))
 HW_KERNEL_HEADERS := $(wildcard $(KERNEL_SRC_DIR)/*.hpp)
+HW_KERNEL_HEADERS += $(wildcard $(KERNEL_SRC_DIR)/libs/*.hpp)
+HW_KERNEL_HEADERS += $(wildcard common/*.hpp)
 
 # Setup debuging
 # The debuging setup is in debuging_setup.ini
@@ -38,10 +39,16 @@ XRT_INI_CONFIG := ./debuging_setup.ini
 
 # set kernel frequency if necessary
 KERNEL_EXT_CONFIG += --kernel_frequency
-KERNEL_EXT_CONFIG += 250
+KERNEL_EXT_CONFIG += 300
 
 # Bit Container Linker Configuration, edit independently
-BC_CONFIG += $(KERNEL_SRC_DIR)/linker.cfg
+
+ifneq ($(TARGET), hw)
+	BC_CONFIG := $(KERNEL_SRC_DIR)/linker_for_debug.cfg
+else
+	BC_CONFIG := $(KERNEL_SRC_DIR)/linker.cfg
+endif
+
 
 
 
@@ -75,7 +82,7 @@ RUN_EXE ?= $(PRJ_NAME)
 RUN_BIN ?= bit_container.xclbin
 
 KERNEL_EXT_CONFIG += --platform
-KERNEL_EXT_CONFIG += $(VITIS_PLATFORM_PATH)
+KERNEL_EXT_CONFIG += $(VITIS_PLATFORM)
 KERNEL_EXT_CONFIG += --temp_dir
 KERNEL_EXT_CONFIG += build/vitis_hls
 KERNEL_EXT_CONFIG += --log_dir
@@ -158,7 +165,7 @@ $(KERNEL_O_DIR)/%.xo: $(KERNEL_SRC_DIR)/%.cpp $(HW_KERNEL_HEADERS)
 # link project secondly
 $(BINARY_CONTAINER): $(HW_KERNEL_OBJS) $(BC_CONFIG)
 	-@mkdir -p $(@D)
-	$(VPP_LINKER) $(VPP_OPTS) --link --platform $(VITIS_PLATFORM_PATH) --config $(BC_CONFIG) $(BC_EXT_CONFIG) --temp_dir build/vivado --log_dir $(LOG_DIR) --report_dir $(REPORT_DIR) -R2 -o"$@" $(HW_KERNEL_OBJS)
+	$(VPP_LINKER) $(VPP_OPTS) --link --platform $(VITIS_PLATFORM) --config $(BC_CONFIG) $(BC_EXT_CONFIG) --temp_dir build/vivado --log_dir $(LOG_DIR) --report_dir $(REPORT_DIR) -R2 -o"$@" $(HW_KERNEL_OBJS)
 
 
 # bulid host finally
@@ -166,10 +173,10 @@ $(HOST_EXE): $(HOST_OBJ)
 	-@mkdir -p $(@D)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
 
-$(HOST_O_DIR)/%.o: $(HOST_SRC_DIR)/%.cpp
+$(HOST_O_DIR)/%.o: $(HOST_SRC_DIR)/%.cpp $(HOST_HEADERS)
 	-@mkdir -p $(@D)
 	$(HOST_CXX) $(CXXFLAGS) -o "$@" "$<"
 
 emconfig.json:
-	-@emconfigutil --platform $(VITIS_PLATFORM_PATH)
+	-@emconfigutil --platform $(VITIS_PLATFORM)
 
